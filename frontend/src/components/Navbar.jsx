@@ -13,7 +13,7 @@ export const Navbar = ({ onToggleSidebar, user }) => {
           <Menu className="w-5 h-5" />
         </button>
         <div>
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+          <h2 className="text-base hidden md:block font-bold text-slate-900 flex items-center gap-2">
             Kinderfun Playground
           </h2>
           <p className="text-xs text-slate-500 font-medium hidden sm:block">Tempat Aman Buat Anak, Waktu Tenang Buat Anda.</p>
