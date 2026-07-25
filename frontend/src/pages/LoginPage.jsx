@@ -93,6 +93,15 @@ export const LoginPage = ({ onLoginSuccess }) => {
             </button>
           </form>
 
+          <div className="pt-4 border-t border-slate-100 text-center">
+            <a
+              href="/customer-portal"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-600 hover:text-purple-700 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 font-bold" /> Masuk ke Portal Cek & Tukar Poin Pelanggan →
+            </a>
+          </div>
+
           {/* Quick Demo Credentials */}
           {/* <div className="pt-4 border-t border-slate-100 space-y-2">
             <p className="text-[11px] font-bold text-slate-400 uppercase text-center">Akun Demo Masuk Cepat:</p>

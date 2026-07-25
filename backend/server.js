@@ -72,7 +72,7 @@ const memoryStore = {
     { id: 4, name: 'Boneka Mascot Red Ant', point_cost: 30, stock: 15, description: 'Boneka mewah plushie semut merah ikonik Kinderfun', image_url: 'https://images.unsplash.com/photo-1559715745-e1b33a271c8f?w=400' }
   ],
   redemptions: [
-    { id: 1, redemption_code: 'RDM-20260724-001', customer_id: 3, customer_name: 'Mama Citra', souvenir_id: 1, souvenir_name: 'Tote Bag Kinderfun', points_spent: 10, qty: 1, created_at: new Date(Date.now() - 86400000) }
+    { id: 1, redemption_code: 'RDM-20260724-001', customer_id: 3, customer_name: 'Mama Citra', souvenir_id: 1, souvenir_name: 'Tote Bag Kinderfun', points_spent: 10, qty: 1, status: 'picked_up', created_at: new Date(Date.now() - 86400000) }
   ],
   attendance: [
     { id: 1, user_id: 2, staff_name: 'Staff Kasir 1', attendance_date: new Date().toISOString().split('T')[0], check_in_time: '08:45:00', check_out_time: '17:00:00', status: 'present', notes: 'Tepat waktu' },
@@ -100,6 +100,17 @@ async function initDb() {
       const conn = await dbPool.getConnection();
       console.log('✅ Connected to MySQL database successfully!');
       conn.release();
+
+      // Auto run migration to add status column in point_redemptions if not exists
+      try {
+        const [columns] = await dbPool.query("SHOW COLUMNS FROM point_redemptions LIKE 'status'");
+        if (columns.length === 0) {
+          await dbPool.query("ALTER TABLE point_redemptions ADD COLUMN status ENUM('pending', 'picked_up') DEFAULT 'picked_up'");
+          console.log('✅ Added status column to point_redemptions table.');
+        }
+      } catch (migErr) {
+        console.log('⚠️ Migration warning (point_redemptions.status):', migErr.message);
+      }
     } catch (err) {
       console.log('⚠️ MySQL connection unavailable, using fallback in-memory store for instant preview:', err.message);
       useInMemory = true;
@@ -772,6 +783,289 @@ app.post('/api/souvenirs/redeem', async (req, res) => {
       success: true,
       message: `Penukaran berhasil! ${totalCost} poin ditukarkan dengan ${qty}x ${souv.name}`
     });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- CUSTOMER PORTAL ENDPOINTS ---
+
+app.post('/api/customer/login', async (req, res) => {
+  const { phone } = req.body;
+  if (!phone) {
+    return res.status(400).json({ success: false, message: 'Nomor telepon/WhatsApp wajib diisi' });
+  }
+
+  if (useInMemory) {
+    const customer = memoryStore.customers.find(c => c.phone === phone);
+    if (customer) {
+      return res.json({
+        success: true,
+        data: { customer },
+        message: 'Login berhasil'
+      });
+    }
+    return res.status(404).json({ success: false, message: 'Nomor telepon tidak terdaftar' });
+  }
+
+  try {
+    const [rows] = await dbPool.query('SELECT * FROM customers WHERE phone = ?', [phone]);
+    if (rows.length > 0) {
+      return res.json({
+        success: true,
+        data: { customer: rows[0] },
+        message: 'Login berhasil'
+      });
+    }
+    return res.status(404).json({ success: false, message: 'Nomor telepon tidak terdaftar' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/customer/profile', async (req, res) => {
+  const customerId = req.query.id;
+  if (!customerId) {
+    return res.status(400).json({ success: false, message: 'Customer ID wajib disertakan' });
+  }
+
+  if (useInMemory) {
+    const customer = memoryStore.customers.find(c => c.id === parseInt(customerId));
+    if (customer) {
+      return res.json({ success: true, data: customer });
+    }
+    return res.status(404).json({ success: false, message: 'Customer tidak ditemukan' });
+  }
+
+  try {
+    const [rows] = await dbPool.query('SELECT * FROM customers WHERE id = ?', [customerId]);
+    if (rows.length > 0) {
+      return res.json({ success: true, data: rows[0] });
+    }
+    return res.status(404).json({ success: false, message: 'Customer tidak ditemukan' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/customer/history', async (req, res) => {
+  const customerId = req.query.id;
+  if (!customerId) {
+    return res.status(400).json({ success: false, message: 'Customer ID wajib disertakan' });
+  }
+
+  if (useInMemory) {
+    const trxs = memoryStore.transactions
+      .filter(t => t.customer_id === parseInt(customerId))
+      .map(t => ({
+        type: 'earn',
+        description: `Kunjungan Paket ${t.package_name}`,
+        points: t.points_earned,
+        date: t.created_at,
+        ref_code: t.trx_code
+      }));
+
+    const rdms = memoryStore.redemptions
+      .filter(r => r.customer_id === parseInt(customerId))
+      .map(r => ({
+        type: 'redeem',
+        description: `Tukar Souvenir ${r.souvenir_name} (x${r.qty})`,
+        points: r.points_spent,
+        date: r.created_at,
+        ref_code: r.redemption_code,
+        status: r.status || 'picked_up'
+      }));
+
+    const history = [...trxs, ...rdms].sort((a, b) => new Date(b.date) - new Date(a.date));
+    return res.json({ success: true, data: history });
+  }
+
+  try {
+    const [trxs] = await dbPool.query(
+      'SELECT trx_code as ref_code, package_name, points_earned as points, created_at as date FROM transactions WHERE customer_id = ?',
+      [customerId]
+    );
+    const [rdms] = await dbPool.query(
+      'SELECT redemption_code as ref_code, souvenir_name, points_spent as points, qty, status, created_at as date FROM point_redemptions WHERE customer_id = ?',
+      [customerId]
+    );
+
+    const formattedTrxs = trxs.map(t => ({
+      type: 'earn',
+      description: `Kunjungan Paket ${t.package_name}`,
+      points: t.points,
+      date: t.date,
+      ref_code: t.ref_code
+    }));
+
+    const formattedRdms = rdms.map(r => ({
+      type: 'redeem',
+      description: `Tukar Souvenir ${r.souvenir_name} (x${r.qty})`,
+      points: r.points,
+      date: r.date,
+      ref_code: r.ref_code,
+      status: r.status
+    }));
+
+    const history = [...formattedTrxs, ...formattedRdms].sort((a, b) => new Date(b.date) - new Date(a.date));
+    return res.json({ success: true, data: history });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/customer/redeem', async (req, res) => {
+  const { customer_id, souvenir_id, qty = 1, notes } = req.body;
+  if (!customer_id || !souvenir_id) {
+    return res.status(400).json({ success: false, message: 'Pelanggan dan Souvenir wajib dipilih' });
+  }
+
+  const redemptionCode = 'RDM-ONLINE-' + new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14);
+
+  if (useInMemory) {
+    const cust = memoryStore.customers.find(c => c.id === parseInt(customer_id));
+    const souv = memoryStore.souvenirs.find(s => s.id === parseInt(souvenir_id));
+
+    if (!cust || !souv) return res.status(404).json({ success: false, message: 'Pelanggan atau Souvenir tidak ditemukan' });
+
+    const totalCost = souv.point_cost * parseInt(qty);
+    if (cust.points_balance < totalCost) {
+      return res.status(400).json({
+        success: false,
+        message: `Poin tidak mencukupi. Diperlukan ${totalCost} poin, namun saldo poin Anda ${cust.points_balance}`
+      });
+    }
+    if (souv.stock < qty) {
+      return res.status(400).json({ success: false, message: `Stok souvenir tidak mencukupi (sisa ${souv.stock})` });
+    }
+
+    cust.points_balance -= totalCost;
+    souv.stock -= parseInt(qty);
+
+    const redemption = {
+      id: Date.now(),
+      redemption_code: redemptionCode,
+      customer_id: cust.id,
+      customer_name: `${cust.parent_name}`,
+      souvenir_id: souv.id,
+      souvenir_name: souv.name,
+      points_spent: totalCost,
+      qty: parseInt(qty),
+      status: 'pending',
+      notes: notes || '',
+      created_at: new Date()
+    };
+    memoryStore.redemptions.unshift(redemption);
+
+    return res.json({
+      success: true,
+      data: redemption,
+      message: `Penukaran diajukan! Silakan ambil di playground dengan kode: ${redemptionCode}`
+    });
+  }
+
+  try {
+    const [custRows] = await dbPool.query('SELECT * FROM customers WHERE id = ?', [customer_id]);
+    const [souvRows] = await dbPool.query('SELECT * FROM souvenirs WHERE id = ?', [souvenir_id]);
+
+    if (custRows.length === 0 || souvRows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Pelanggan atau Souvenir tidak ditemukan' });
+    }
+
+    const cust = custRows[0];
+    const souv = souvRows[0];
+    const totalCost = souv.point_cost * qty;
+
+    if (cust.points_balance < totalCost) {
+      return res.status(400).json({
+        success: false,
+        message: `Poin tidak mencukupi. Membutuhkan ${totalCost} poin, saldo Anda: ${cust.points_balance}`
+      });
+    }
+    if (souv.stock < qty) {
+      return res.status(400).json({ success: false, message: `Stok souvenir tidak mencukupi` });
+    }
+
+    // Insert redemption record with status 'pending'
+    await dbPool.query(
+      'INSERT INTO point_redemptions (redemption_code, customer_id, souvenir_id, souvenir_name, points_spent, qty, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [redemptionCode, customer_id, souvenir_id, souv.name, totalCost, qty, 'pending', notes || '']
+    );
+
+    // Deduct customer points and reduce stock
+    await dbPool.query('UPDATE customers SET points_balance = points_balance - ? WHERE id = ?', [totalCost, customer_id]);
+    await dbPool.query('UPDATE souvenirs SET stock = stock - ? WHERE id = ?', [qty, souvenir_id]);
+
+    return res.json({
+      success: true,
+      message: `Penukaran diajukan! Silakan ambil di playground dengan kode: ${redemptionCode}`
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// --- ADMIN REDEMPTION MANAGEMENT ENDPOINTS ---
+
+app.get('/api/souvenirs/redemptions', async (req, res) => {
+  const { page, limit, offset, search } = getPaginationParams(req);
+
+  if (useInMemory) {
+    let filtered = memoryStore.redemptions;
+    if (search) {
+      filtered = filtered.filter(r => 
+        r.souvenir_name.toLowerCase().includes(search) || 
+        r.customer_name.toLowerCase().includes(search) ||
+        r.redemption_code.toLowerCase().includes(search)
+      );
+    }
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const data = filtered.slice(offset, offset + limit);
+
+    return res.json({ success: true, data, pagination: { page, limit, total, totalPages } });
+  }
+
+  try {
+    let countSql = 'SELECT COUNT(*) as count FROM point_redemptions r JOIN customers c ON r.customer_id = c.id';
+    let sql = 'SELECT r.*, c.parent_name as customer_name, c.child_name, c.phone FROM point_redemptions r JOIN customers c ON r.customer_id = c.id';
+    let params = [];
+
+    if (search) {
+      countSql += ' WHERE r.souvenir_name LIKE ? OR c.parent_name LIKE ? OR r.redemption_code LIKE ?';
+      sql += ' WHERE r.souvenir_name LIKE ? OR c.parent_name LIKE ? OR r.redemption_code LIKE ?';
+      const searchWild = `%${search}%`;
+      params = [searchWild, searchWild, searchWild];
+    }
+
+    sql += ' ORDER BY r.created_at DESC';
+
+    const [countRows] = await dbPool.query(countSql, params);
+    const total = countRows[0].count;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    const [rows] = await dbPool.query(sql, [...params, limit, offset]);
+
+    return res.json({ success: true, data: rows, pagination: { page, limit, total, totalPages } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/souvenirs/redemptions/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (useInMemory) {
+    const rdm = memoryStore.redemptions.find(r => r.id === parseInt(id));
+    if (!rdm) return res.status(404).json({ success: false, message: 'Data penukaran tidak ditemukan' });
+    rdm.status = status;
+    return res.json({ success: true, message: `Status berhasil diubah menjadi ${status}` });
+  }
+
+  try {
+    await dbPool.query('UPDATE point_redemptions SET status = ? WHERE id = ?', [status, id]);
+    return res.json({ success: true, message: `Status berhasil diubah menjadi ${status}` });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

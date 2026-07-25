@@ -14,6 +14,7 @@ import { AdminStaffPage } from './pages/AdminStaffPage';
 import { AdminPackagesPage } from './pages/AdminPackagesPage';
 import { AdminReportsPage } from './pages/AdminReportsPage';
 import { AdminFinancePage } from './pages/AdminFinancePage';
+import { CustomerPortalPage } from './pages/CustomerPortalPage';
 
 export function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -46,6 +47,33 @@ export function App() {
     localStorage.removeItem('kinderfun_user');
     setUser(null);
   };
+
+  const isCustomerRoute = window.location.pathname.startsWith('/customer-portal');
+
+  // Customer Routing Fallback
+  if (isCustomerRoute) {
+    return (
+      <Router>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            duration: 3500,
+            style: {
+              background: '#0F172A',
+              color: '#F8FAFC',
+              borderRadius: '0.75rem',
+              fontWeight: '600',
+              fontFamily: 'Plus Jakarta Sans, sans-serif'
+            }
+          }}
+        />
+        <Routes>
+          <Route path="/customer-portal/*" element={<CustomerPortalPage />} />
+          <Route path="*" element={<Navigate to="/customer-portal" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
 
   // Render Login Page if unauthenticated
   if (!user) {

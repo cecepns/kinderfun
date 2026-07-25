@@ -31,6 +31,14 @@ export const API_ENDPOINTS = {
     UPDATE: (id) => `/souvenirs/${id}`,
     DELETE: (id) => `/souvenirs/${id}`,
     REDEEM: "/souvenirs/redeem",
+    REDEMPTIONS_LIST: "/souvenirs/redemptions",
+    UPDATE_REDEMPTION_STATUS: (id) => `/souvenirs/redemptions/${id}/status`,
+  },
+  CUSTOMER: {
+    LOGIN: "/customer/login",
+    PROFILE: "/customer/profile",
+    HISTORY: "/customer/history",
+    REDEEM: "/customer/redeem",
   },
   ATTENDANCE: {
     LIST: "/attendance",

@@ -87,6 +87,7 @@ CREATE TABLE `point_redemptions` (
   `souvenir_name` VARCHAR(100) NOT NULL,
   `points_spent` INT NOT NULL,
   `qty` INT DEFAULT 1,
+  `status` ENUM('pending', 'picked_up') DEFAULT 'picked_up',
   `notes` TEXT,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`customer_id`) REFERENCES `customers`(`id`) ON DELETE CASCADE,
