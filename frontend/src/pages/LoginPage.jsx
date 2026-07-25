@@ -94,7 +94,7 @@ export const LoginPage = ({ onLoginSuccess }) => {
           </form>
 
           {/* Quick Demo Credentials */}
-          <div className="pt-4 border-t border-slate-100 space-y-2">
+          {/* <div className="pt-4 border-t border-slate-100 space-y-2">
             <p className="text-[11px] font-bold text-slate-400 uppercase text-center">Akun Demo Masuk Cepat:</p>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -115,7 +115,7 @@ export const LoginPage = ({ onLoginSuccess }) => {
                 <span className="text-[10px] text-slate-500">kasir1@kinderfun.com</span>
               </button>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
