@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import AsyncSelect from 'react-select/async';
 import { request } from '../utils/request';
 import { API_ENDPOINTS } from '../utils/endpoints';
+import { getImageUrl } from '../utils/api';
 import { Modal } from '../components/Modal';
 import { Pagination } from '../components/Pagination';
 import toast from 'react-hot-toast';
+
 import { 
   Gift, 
   Sparkles, 
@@ -425,11 +427,12 @@ export const RewardCatalogPage = ({ user }) => {
                           </div>
                         ) : (
                           <img
-                            src={item.image_url}
+                            src={getImageUrl(item.image_url)}
                             alt={item.name}
                             onError={() => handleImageError(item.id)}
                             className="w-full h-full object-cover"
                           />
+
                         )}
 
                         <span className="absolute top-2.5 right-2.5 bg-purple-600 text-white font-bold text-[11px] px-2 py-0.5 rounded-md shadow-2xs flex items-center gap-1">
@@ -595,9 +598,10 @@ export const RewardCatalogPage = ({ user }) => {
                 {failedImages[selectedSouvenir.id] || !selectedSouvenir.image_url ? (
                   <Gift className="w-7 h-7 text-purple-400" />
                 ) : (
-                  <img src={selectedSouvenir.image_url} alt="" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(selectedSouvenir.image_url)} alt="" className="w-full h-full object-cover" />
                 )}
               </div>
+
               <div>
                 <h4 className="font-bold text-slate-900 text-sm">{selectedSouvenir.name}</h4>
                 <p className="text-xs text-purple-700 font-bold">{selectedSouvenir.point_cost} Poin / unit</p>
@@ -712,11 +716,12 @@ export const RewardCatalogPage = ({ user }) => {
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 rounded-xl border border-slate-200 bg-purple-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
                 {souvenirForm.image_url ? (
-                  <img src={souvenirForm.image_url} alt="Preview" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(souvenirForm.image_url)} alt="Preview" className="w-full h-full object-cover" />
                 ) : (
                   <ImageIcon className="w-6 h-6 text-purple-400" />
                 )}
               </div>
+
               <div className="flex-1">
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs border border-purple-200 transition-all">
                   <Upload className="w-4 h-4" />

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { request } from '../utils/request';
 import { API_ENDPOINTS } from '../utils/endpoints';
+import { getImageUrl } from '../utils/api';
 import { Modal } from '../components/Modal';
 import toast from 'react-hot-toast';
+
 import {
   Sparkles,
   Phone,
@@ -380,12 +382,13 @@ export const CustomerPortalPage = () => {
                             <Gift className="w-8 h-8 text-orange-300 stroke-1" />
                           ) : (
                             <img
-                              src={item.image_url}
+                              src={getImageUrl(item.image_url)}
                               alt={item.name}
                               onError={() => handleImageError(item.id)}
                               className="w-full h-full object-cover"
                             />
                           )}
+
                           <span className="absolute bottom-2 left-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-black text-[10px] px-2 py-0.5 rounded-md shadow-sm">
                             {item.point_cost} Pts
                           </span>
@@ -455,12 +458,13 @@ export const CustomerPortalPage = () => {
                     >
                       {act.cover_image && (
                         <div className="w-full h-36 overflow-hidden bg-slate-100 relative">
-                          <img src={act.cover_image} alt={act.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" />
+                          <img src={getImageUrl(act.cover_image)} alt={act.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" />
                           <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-orange-500/90 backdrop-blur-xs text-white text-[10px] font-extrabold">
                             {act.category || 'Kegiatan'}
                           </span>
                         </div>
                       )}
+
                       <div className="p-3.5 space-y-1.5">
                         <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600">
                           <Calendar className="w-3 h-3" />
@@ -568,9 +572,10 @@ export const CustomerPortalPage = () => {
                 {failedImages[selectedSouvenir.id] || !selectedSouvenir.image_url ? (
                   <Gift className="w-6 h-6 text-orange-400" />
                 ) : (
-                  <img src={selectedSouvenir.image_url} alt="" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(selectedSouvenir.image_url)} alt="" className="w-full h-full object-cover" />
                 )}
               </div>
+
               <div>
                 <h4 className="font-extrabold text-slate-900 text-xs">{selectedSouvenir.name}</h4>
                 <p className="text-[11px] text-orange-600 font-extrabold">{selectedSouvenir.point_cost} Poin / pcs</p>
@@ -645,9 +650,10 @@ export const CustomerPortalPage = () => {
           <div className="space-y-4">
             {selectedActivity.cover_image && (
               <div className="w-full h-48 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
-                <img src={selectedActivity.cover_image} alt={selectedActivity.title} className="w-full h-full object-cover" />
+                <img src={getImageUrl(selectedActivity.cover_image)} alt={selectedActivity.title} className="w-full h-full object-cover" />
               </div>
             )}
+
 
             <div className="space-y-1">
               <span className="px-2.5 py-1 rounded-md bg-orange-100 text-orange-700 text-[10px] font-extrabold uppercase">

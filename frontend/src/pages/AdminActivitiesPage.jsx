@@ -3,7 +3,9 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { request } from '../utils/request';
 import { API_ENDPOINTS } from '../utils/endpoints';
+import { getImageUrl } from '../utils/api';
 import { Modal } from '../components/Modal';
+
 import { Pagination } from '../components/Pagination';
 import toast from 'react-hot-toast';
 import {
@@ -295,12 +297,13 @@ export const AdminActivitiesPage = () => {
                     <td className="p-3">
                       <div className="w-14 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
                         {item.cover_image ? (
-                          <img src={item.cover_image} alt="" className="w-full h-full object-cover" />
+                          <img src={getImageUrl(item.cover_image)} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <ImageIcon className="w-5 h-5 text-slate-400" />
                         )}
                       </div>
                     </td>
+
                     <td className="p-3">
                       <div className="font-bold text-slate-900 text-xs">{item.title}</div>
                       <div className="text-[10px] text-slate-400 truncate max-w-xs" dangerouslySetInnerHTML={{ __html: item.description?.replace(/<[^>]+>/g, '').slice(0, 70) + '...' }} />
@@ -402,11 +405,12 @@ export const AdminActivitiesPage = () => {
             <div className="flex items-center gap-3">
               <div className="w-20 h-14 rounded-xl border border-slate-200 bg-purple-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
                 {form.cover_image ? (
-                  <img src={form.cover_image} alt="Cover Preview" className="w-full h-full object-cover" />
+                  <img src={getImageUrl(form.cover_image)} alt="Cover Preview" className="w-full h-full object-cover" />
                 ) : (
                   <ImageIcon className="w-6 h-6 text-purple-400" />
                 )}
               </div>
+
               <div className="flex-1">
                 <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs border border-purple-200 transition-all">
                   <Upload className="w-4 h-4" />

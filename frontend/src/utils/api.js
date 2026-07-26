@@ -16,3 +16,16 @@ api.interceptors.request.use((config) => {
   }
   return config;
 });
+
+// Helper to format image URLs properly across environment (local & production)
+export const getImageUrl = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+  const apiBase = api.defaults.baseURL; // e.g. "https://api.kingcreativestudio.my.id/kinderfun/api" or "http://localhost:5000/api"
+  const domainBase = apiBase.replace(/\/api\/?$/, "");
+  const cleanPath = url.startsWith("/") ? url : `/${url}`;
+  return `${domainBase}${cleanPath}`;
+};
+
