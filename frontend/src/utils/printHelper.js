@@ -42,10 +42,12 @@ export const directPrint = ({ title, contentHtml }) => {
             padding-bottom: 12px;
             margin-bottom: 20px;
           }
-          .header-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: #ea580c;
+          .header-logo {
+            height: 48px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 4px;
           }
           .header-subtitle {
             font-size: 12px;
@@ -123,7 +125,7 @@ export const directPrint = ({ title, contentHtml }) => {
       <body>
         <div class="header">
           <div>
-            <div class="header-title">KINDERFUN PLAYGROUND</div>
+            <img src="/kinderfun.jpg" class="header-logo" alt="Kinderfun Logo" />
             <div class="header-subtitle">${title}</div>
           </div>
           <div class="badge">Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
