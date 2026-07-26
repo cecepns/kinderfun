@@ -15,8 +15,11 @@ import {
   Trash2,
   UserCheck,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
+
 
 export const RewardCatalogPage = ({ user }) => {
   const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' or 'claims'
@@ -58,6 +61,29 @@ export const RewardCatalogPage = ({ user }) => {
     description: '',
     image_url: ''
   });
+  const [uploadLoading, setUploadLoading] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+
+    setUploadLoading(true);
+    try {
+      const res = await request.post(API_ENDPOINTS.UPLOAD, formData);
+      if (res.success) {
+        setSouvenirForm(prev => ({ ...prev, image_url: res.url }));
+        toast.success('Foto souvenir berhasil diunggah!');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Gagal mengunggah foto souvenir');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
 
   useEffect(() => {
     fetchSouvenirs();
@@ -681,15 +707,32 @@ export const RewardCatalogPage = ({ user }) => {
           </div>
 
           <div>
-            <label className="text-xs font-bold text-slate-600 block mb-1">URL Gambar (Opsional)</label>
-            <input
-              type="text"
-              placeholder="https://..."
-              value={souvenirForm.image_url}
-              onChange={(e) => setSouvenirForm({ ...souvenirForm, image_url: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+            <label className="text-xs font-bold text-slate-600 block mb-1">Foto / Gambar Souvenir</label>
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 rounded-xl border border-slate-200 bg-purple-50 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                {souvenirForm.image_url ? (
+                  <img src={souvenirForm.image_url} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <ImageIcon className="w-6 h-6 text-purple-400" />
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs border border-purple-200 transition-all">
+                  <Upload className="w-4 h-4" />
+                  <span>{uploadLoading ? 'Mengunggah...' : 'Upload Gambar Direct'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    disabled={uploadLoading}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-[10px] text-slate-400 mt-1">Format: JPG, PNG, WEBP (Maks 10MB)</p>
+              </div>
+            </div>
           </div>
+
 
           <div>
             <label className="text-xs font-bold text-slate-600 block mb-1">Deskripsi</label>

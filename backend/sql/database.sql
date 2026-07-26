@@ -120,6 +120,18 @@ CREATE TABLE `expenses` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 9. Activities / Articles Table
+CREATE TABLE `activities` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `title` VARCHAR(255) NOT NULL,
+  `category` VARCHAR(100) DEFAULT 'Kegiatan',
+  `cover_image` VARCHAR(255),
+  `description` LONGTEXT,
+  `author` VARCHAR(100) DEFAULT 'Admin Kinderfun',
+  `event_date` DATE NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- SEED DATA
 -- Users (Password stored as plaintext for seed simplicity, or handled in backend)
 INSERT INTO `users` (`id`, `name`, `email`, `password`, `role`, `phone`) VALUES
@@ -142,10 +154,10 @@ INSERT INTO `customers` (`id`, `parent_name`, `child_name`, `phone`, `email`, `p
 
 -- Souvenirs / Merchandise
 INSERT INTO `souvenirs` (`id`, `name`, `point_cost`, `stock`, `description`, `image_url`) VALUES
-(1, 'Tote Bag Kinderfun', 10, 50, 'Kanvas spunbond ramah lingkungan bermotif Maskot Kinderfun', '/uploads/totebag.png'),
-(2, 'Botol Minum Fun Tumbler', 20, 30, 'Tumbler air minum anak BPA-Free 500ml', '/uploads/tumbler.png'),
-(3, 'Topi Kinderfun Play', 15, 25, 'Topi anak warna-warni lucu bordir Kinderfun', '/uploads/hat.png'),
-(4, 'Boneka Mascot Red Ant', 30, 15, 'Boneka mewah plushie semut merah ikonik Kinderfun', '/uploads/mascot.png');
+(1, 'Tote Bag Kinderfun', 10, 50, 'Kanvas spunbond ramah lingkungan bermotif Maskot Kinderfun', 'https://images.unsplash.com/photo-1597484661643-2f5fef640dd1?w=400'),
+(2, 'Botol Minum Fun Tumbler', 20, 30, 'Tumbler air minum anak BPA-Free 500ml', 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?w=400'),
+(3, 'Topi Kinderfun Play', 15, 25, 'Topi anak warna-warni lucu bordir Kinderfun', 'https://images.unsplash.com/photo-1588850561407-ed78c282e89b?w=400'),
+(4, 'Boneka Mascot Red Ant', 30, 15, 'Boneka mewah plushie semut merah ikonik Kinderfun', 'https://images.unsplash.com/photo-1559715745-e1b33a271c8f?w=400');
 
 -- Sample Transactions
 INSERT INTO `transactions` (`trx_code`, `customer_id`, `package_id`, `package_name`, `amount`, `is_weekend`, `points_earned`, `payment_method`, `created_at`) VALUES
@@ -166,3 +178,17 @@ INSERT INTO `staff_attendance` (`user_id`, `staff_name`, `attendance_date`, `che
 INSERT INTO `expenses` (`title`, `category`, `amount`, `expense_date`, `description`) VALUES
 ('Pembelian Disinfektan & Pembersih Mainan', 'Kebersihan', 150000.00, CURDATE() - INTERVAL 3 DAY, 'Stok pembersih bulanan tempat mainan'),
 ('Pembayaran Listrik & WiFi', 'Utilitas', 650000.00, CURDATE() - INTERVAL 5 DAY, 'Tagihan bulanan arena playground');
+
+-- 10. Settings Table
+CREATE TABLE `settings` (
+  `setting_key` VARCHAR(100) PRIMARY KEY,
+  `setting_value` TEXT NOT NULL,
+  `description` VARCHAR(255),
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Insert default settings
+INSERT INTO `settings` (`setting_key`, `setting_value`, `description`) VALUES
+('default_visit_points', '10', 'Default poin reward per transaksi kunjungan');
+
+

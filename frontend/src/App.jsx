@@ -14,7 +14,9 @@ import { AdminStaffPage } from './pages/AdminStaffPage';
 import { AdminPackagesPage } from './pages/AdminPackagesPage';
 import { AdminReportsPage } from './pages/AdminReportsPage';
 import { AdminFinancePage } from './pages/AdminFinancePage';
+import { AdminActivitiesPage } from './pages/AdminActivitiesPage';
 import { CustomerPortalPage } from './pages/CustomerPortalPage';
+
 
 export function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -155,6 +157,11 @@ export function App() {
                 path="/admin/finance"
                 element={user.role === 'admin' ? <AdminFinancePage /> : <Navigate to="/" replace />}
               />
+              <Route
+                path="/admin/activities"
+                element={user.role === 'admin' ? <AdminActivitiesPage /> : <Navigate to="/" replace />}
+              />
+
               
               {/* Fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />

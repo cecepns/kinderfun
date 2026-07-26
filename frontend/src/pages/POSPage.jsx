@@ -51,12 +51,25 @@ export const POSPage = () => {
   const [newCustForm, setNewCustForm] = useState({ parent_name: '', child_name: '', phone: '', email: '' });
 
   useEffect(() => {
+    fetchSettings();
     fetchPackages();
     fetchTransactions();
     fetchCustomers();
   }, [trxPage, trxLimit, searchTrx]);
 
+  const fetchSettings = async () => {
+    try {
+      const res = await request.get(API_ENDPOINTS.SETTINGS.GET);
+      if (res.success && res.data && res.data.default_visit_points) {
+        setPointsToEarn(parseInt(res.data.default_visit_points) || 10);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const fetchPackages = async () => {
+
     try {
       const res = await request.get(API_ENDPOINTS.PACKAGES.LIST);
       if (res.success) setPackages(res.data);

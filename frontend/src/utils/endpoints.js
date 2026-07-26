@@ -58,4 +58,18 @@ export const API_ENDPOINTS = {
     ATTENDANCE: "/reports/attendance",
     FINANCE: "/reports/finance",
   },
+  UPLOAD: "/upload",
+  ACTIVITIES: {
+    LIST: "/activities",
+    DETAIL: (id) => `/activities/${id}`,
+    CREATE: "/activities",
+    UPDATE: (id) => `/activities/${id}`,
+    DELETE: (id) => `/activities/${id}`,
+  },
+  SETTINGS: {
+    GET: "/settings",
+    UPDATE: "/settings",
+  },
 };
+
+

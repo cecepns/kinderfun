@@ -15,8 +15,10 @@ import {
   Sparkles,
   Phone,
   Mail,
-  UserCheck
+  UserCheck,
+  Settings
 } from 'lucide-react';
+
 
 export const CustomerPointsPage = () => {
   const [customers, setCustomers] = useState([]);
@@ -30,7 +32,12 @@ export const CustomerPointsPage = () => {
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPointModalOpen, setIsPointModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
+
+  // Settings State
+  const [defaultVisitPoints, setDefaultVisitPoints] = useState(10);
+  const [savingSettings, setSavingSettings] = useState(false);
 
   // Form State
   const [form, setForm] = useState({
@@ -43,6 +50,40 @@ export const CustomerPointsPage = () => {
 
   const [pointDelta, setPointDelta] = useState(10);
   const [pointAction, setPointAction] = useState('add');
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await request.get(API_ENDPOINTS.SETTINGS.GET);
+      if (res.success && res.data && res.data.default_visit_points) {
+        setDefaultVisitPoints(parseInt(res.data.default_visit_points) || 10);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setSavingSettings(true);
+    try {
+      const res = await request.put(API_ENDPOINTS.SETTINGS.UPDATE, {
+        default_visit_points: defaultVisitPoints
+      });
+      if (res.success) {
+        toast.success('Default poin reward kunjungan berhasil diperbarui!');
+        setIsSettingsModalOpen(false);
+      }
+    } catch (err) {
+      toast.error(err.message || 'Gagal menyimpan pengaturan');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -198,12 +239,20 @@ export const CustomerPointsPage = () => {
           </p>
         </div>
 
-        <button
-          onClick={openCreateModal}
-          className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-2"
-        >
-          <UserPlus className="w-4 h-4" /> Tambah Pelanggan
-        </button>
+        <div className="w-full sm:w-auto flex items-center gap-2">
+          <button
+            onClick={() => setIsSettingsModalOpen(true)}
+            className="flex-1 sm:flex-initial py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-2"
+          >
+            <Settings className="w-4 h-4" /> Pengaturan Poin Default ({defaultVisitPoints} Pts)
+          </button>
+          <button
+            onClick={openCreateModal}
+            className="flex-1 sm:flex-initial py-2.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" /> Tambah Pelanggan
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
@@ -222,9 +271,10 @@ export const CustomerPointsPage = () => {
           </div>
 
           <div className="text-xs text-slate-500 font-medium">
-            * Setiap 1 kunjungan otomatis mendapatkan <strong className="text-amber-600">10 Poin</strong>
+            * Setiap 1 kunjungan otomatis mendapatkan <strong className="text-amber-600 font-bold">{defaultVisitPoints} Poin</strong> (dapat diubah)
           </div>
         </div>
+
 
         {/* Customer Table */}
         <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
@@ -465,6 +515,49 @@ export const CustomerPointsPage = () => {
           </div>
         )}
       </Modal>
+
+      {/* Default Points Settings Modal */}
+      <Modal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setIsSettingsModalOpen(false)}
+        title="Pengaturan Default Poin Kunjungan"
+      >
+        <form onSubmit={handleSaveSettings} className="space-y-4">
+          <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-xs font-semibold leading-relaxed">
+            💡 Setiap transaksi pembelian tiket / kunjungan anak akan secara otomatis memberikan jumlah poin ini kepada akun pelanggan.
+          </div>
+
+          <div>
+            <label className="text-xs font-bold text-slate-700 block mb-1">Jumlah Poin Default per Kunjungan *</label>
+            <input
+              type="number"
+              min={1}
+              required
+              value={defaultVisitPoints}
+              onChange={(e) => setDefaultVisitPoints(Math.max(1, parseInt(e.target.value) || 1))}
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-lg font-bold text-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+
+          <div className="pt-4 flex justify-end gap-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsSettingsModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-slate-500 font-bold text-sm hover:bg-slate-100"
+            >
+              Batal
+            </button>
+            <button
+              type="submit"
+              disabled={savingSettings}
+              className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-2xs disabled:opacity-40"
+            >
+              {savingSettings ? 'Simpan...' : 'Simpan Pengaturan Poin'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };
+

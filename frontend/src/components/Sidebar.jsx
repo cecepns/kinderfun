@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { request } from '../utils/request';
+import { API_ENDPOINTS } from '../utils/endpoints';
 import {
   Ticket,
   Award,
@@ -12,20 +14,42 @@ import {
   X,
   LogOut,
   ShieldCheck,
-  Sparkles
+  Sparkles,
+  Newspaper
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
+  const [defaultPoints, setDefaultPoints] = useState(10);
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await request.get(API_ENDPOINTS.SETTINGS.GET);
+      if (res.success && res.data && res.data.default_visit_points) {
+        setDefaultPoints(parseInt(res.data.default_visit_points) || 10);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const navItems = [
+
+
     { label: 'Tiket & POS', path: '/', icon: Ticket, roles: ['admin', 'staff'] },
     { label: 'Poin Pelanggan', path: '/customers', icon: Award, roles: ['admin', 'staff'] },
     { label: 'Tukar Souvenir', path: '/rewards', icon: Gift, roles: ['admin', 'staff'] },
     { label: 'Absensi Staf', path: '/attendance', icon: UserCheck, roles: ['admin', 'staff'] },
+    { label: 'Artikel & Kegiatan', path: '/admin/activities', icon: Newspaper, roles: ['admin'] },
     { label: 'Manajemen Pegawai', path: '/admin/staff', icon: Users, roles: ['admin'] },
     { label: 'Manajemen Paket Tiket', path: '/admin/packages', icon: Tag, roles: ['admin'] },
     { label: 'Laporan Presensi & Pengunjung', path: '/admin/reports', icon: FileText, roles: ['admin'] },
     { label: 'Laporan Keuangan', path: '/admin/finance', icon: TrendingUp, roles: ['admin'] },
   ];
+
 
   const allowedItems = navItems.filter(item => item.roles.includes(user?.role || 'staff'));
 
@@ -75,8 +99,9 @@ export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
           <Sparkles className="w-3 h-3 text-yellow-300" />
           <p className="text-[10px] font-bold text-orange-100">Info Poin Pelanggan</p>
         </div>
-        <p className="text-xs font-black text-yellow-300">1 Kunjungan = 10 Poin</p>
+        <p className="text-xs font-black text-yellow-300">1 Kunjungan = {defaultPoints} Poin</p>
       </div>
+
 
       {/* Logout Button */}
       <div className="p-3 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}>

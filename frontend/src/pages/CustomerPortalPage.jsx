@@ -12,7 +12,11 @@ import {
   Baby,
   CheckCircle2,
   Clock,
-  ShieldAlert
+  ShieldAlert,
+  Newspaper,
+  Calendar,
+  Search,
+  ChevronRight
 } from 'lucide-react';
 
 export const CustomerPortalPage = () => {
@@ -32,7 +36,12 @@ export const CustomerPortalPage = () => {
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState([]);
   const [souvenirs, setSouvenirs] = useState([]);
-  const [activeTab, setActiveTab] = useState('gifts'); // 'gifts' or 'history'
+  const [activities, setActivities] = useState([]);
+  const [activeTab, setActiveTab] = useState('gifts'); // 'gifts', 'history', 'activities'
+  const [activitySearch, setActivitySearch] = useState('');
+  const [debouncedActivitySearch, setDebouncedActivitySearch] = useState('');
+  const [selectedActivity, setSelectedActivity] = useState(null);
+  const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
 
   // Modals
   const [isRedeemModalOpen, setIsRedeemModalOpen] = useState(false);
@@ -43,6 +52,32 @@ export const CustomerPortalPage = () => {
 
   // Failed images tracker
   const [failedImages, setFailedImages] = useState({});
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedActivitySearch(activitySearch);
+    }, 350);
+    return () => clearTimeout(handler);
+  }, [activitySearch]);
+
+  useEffect(() => {
+    fetchActivities();
+  }, [debouncedActivitySearch]);
+
+  const fetchActivities = async () => {
+    try {
+      const res = await request.get(API_ENDPOINTS.ACTIVITIES.LIST, {
+        limit: 20,
+        search: debouncedActivitySearch
+      });
+      if (res.success) {
+        setActivities(res.data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
 
   useEffect(() => {
     if (customer) {
@@ -280,29 +315,41 @@ export const CustomerPortalPage = () => {
         </div>
 
         {/* NAVIGATION BUTTONS */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => setActiveTab('gifts')}
-            className={`p-3.5 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 ${activeTab === 'gifts'
+            className={`p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1 ${activeTab === 'gifts'
               ? 'bg-gradient-to-r from-orange-500 to-red-500 border-orange-500 text-white font-extrabold shadow-md'
               : 'bg-white border-orange-100 text-slate-700 hover:bg-orange-50'
               }`}
           >
-            <Gift className={`w-5 h-5 ${activeTab === 'gifts' ? 'text-amber-300' : 'text-orange-500'}`} />
-            <span className="text-xs font-bold">Tukar Hadiah</span>
+            <Gift className={`w-4 h-4 ${activeTab === 'gifts' ? 'text-amber-300' : 'text-orange-500'}`} />
+            <span className="text-[11px] font-bold">Tukar Hadiah</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('activities')}
+            className={`p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1 ${activeTab === 'activities'
+              ? 'bg-gradient-to-r from-orange-500 to-red-500 border-orange-500 text-white font-extrabold shadow-md'
+              : 'bg-white border-orange-100 text-slate-700 hover:bg-orange-50'
+              }`}
+          >
+            <Newspaper className={`w-4 h-4 ${activeTab === 'activities' ? 'text-amber-300' : 'text-orange-500'}`} />
+            <span className="text-[11px] font-bold">Kegiatan</span>
           </button>
 
           <button
             onClick={() => setActiveTab('history')}
-            className={`p-3.5 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1.5 ${activeTab === 'history'
+            className={`p-3 rounded-2xl border-2 text-center transition-all flex flex-col items-center justify-center gap-1 ${activeTab === 'history'
               ? 'bg-gradient-to-r from-orange-500 to-red-500 border-orange-500 text-white font-extrabold shadow-md'
               : 'bg-white border-orange-100 text-slate-700 hover:bg-orange-50'
               }`}
           >
-            <History className={`w-5 h-5 ${activeTab === 'history' ? 'text-amber-300' : 'text-orange-500'}`} />
-            <span className="text-xs font-bold">Riwayat Poin</span>
+            <History className={`w-4 h-4 ${activeTab === 'history' ? 'text-amber-300' : 'text-orange-500'}`} />
+            <span className="text-[11px] font-bold">Riwayat Poin</span>
           </button>
         </div>
+
 
         {/* DYNAMIC CONTENTS */}
         <div className="space-y-3">
@@ -369,11 +416,79 @@ export const CustomerPortalPage = () => {
                 })}
               </div>
             </>
+          ) : activeTab === 'activities' ? (
+            <>
+              <div className="flex items-center justify-between">
+                <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
+                  <Newspaper className="w-4 h-4 text-orange-500" /> Agenda & Kegiatan Kinderfun
+                </h3>
+                <span className="text-xs text-slate-500 font-bold bg-orange-100 px-2 py-0.5 rounded-full">{activities.length} info</span>
+              </div>
+
+              {/* Search Bar for Activities */}
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Cari kegiatan atau event..."
+                  value={activitySearch}
+                  onChange={(e) => setActivitySearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-white border-2 border-orange-100 text-xs font-bold focus:outline-none focus:border-orange-500"
+                />
+              </div>
+
+              {/* Activities List */}
+              <div className="space-y-3">
+                {activities.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-6 text-center border-2 border-orange-100 text-slate-400 text-xs font-semibold">
+                    Belum ada informasi kegiatan.
+                  </div>
+                ) : (
+                  activities.map((act) => (
+                    <div
+                      key={act.id}
+                      onClick={() => {
+                        setSelectedActivity(act);
+                        setIsActivityModalOpen(true);
+                      }}
+                      className="bg-white rounded-2xl overflow-hidden border-2 border-orange-100 hover:border-orange-300 transition-all shadow-xs cursor-pointer group"
+                    >
+                      {act.cover_image && (
+                        <div className="w-full h-36 overflow-hidden bg-slate-100 relative">
+                          <img src={act.cover_image} alt={act.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" />
+                          <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-orange-500/90 backdrop-blur-xs text-white text-[10px] font-extrabold">
+                            {act.category || 'Kegiatan'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="p-3.5 space-y-1.5">
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600">
+                          <Calendar className="w-3 h-3" />
+                          <span>{act.event_date ? act.event_date.split('T')[0] : 'Setiap Hari'}</span>
+                        </div>
+                        <h4 className="font-extrabold text-slate-900 text-xs line-clamp-2 group-hover:text-orange-600 transition-colors">
+                          {act.title}
+                        </h4>
+                        <div
+                          className="text-[11px] text-slate-500 line-clamp-2 font-medium"
+                          dangerouslySetInnerHTML={{ __html: act.description?.replace(/<[^>]+>/g, '').slice(0, 100) + '...' }}
+                        />
+                        <div className="pt-2 flex items-center justify-between text-[10px] font-bold text-orange-600">
+                          <span>Lihat Detail Kegiatan</span>
+                          <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
           ) : (
             <>
               <h3 className="font-extrabold text-slate-800 text-sm flex items-center gap-1.5">
                 <History className="w-4 h-4 text-orange-500" /> Riwayat Aktivitas Poin
               </h3>
+
 
               {/* History List */}
               <div className="space-y-2">
@@ -519,6 +634,51 @@ export const CustomerPortalPage = () => {
           </div>
         )}
       </Modal>
+
+      {/* Activity Detail Modal */}
+      <Modal
+        isOpen={isActivityModalOpen}
+        onClose={() => setIsActivityModalOpen(false)}
+        title="Detail Kegiatan Kinderfun"
+      >
+        {selectedActivity && (
+          <div className="space-y-4">
+            {selectedActivity.cover_image && (
+              <div className="w-full h-48 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+                <img src={selectedActivity.cover_image} alt={selectedActivity.title} className="w-full h-full object-cover" />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <span className="px-2.5 py-1 rounded-md bg-orange-100 text-orange-700 text-[10px] font-extrabold uppercase">
+                {selectedActivity.category || 'Kegiatan'}
+              </span>
+              <h3 className="text-base font-extrabold text-slate-900 mt-1">{selectedActivity.title}</h3>
+              <div className="flex items-center gap-3 text-xs font-semibold text-slate-500 pt-1">
+                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5 text-orange-500" /> {selectedActivity.event_date ? selectedActivity.event_date.split('T')[0] : 'Setiap Hari'}</span>
+                <span>•</span>
+                <span>Oleh {selectedActivity.author || 'Admin Kinderfun'}</span>
+              </div>
+            </div>
+
+            <div
+              className="prose prose-sm max-w-none text-slate-700 text-xs font-medium border-t border-slate-100 pt-3 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: selectedActivity.description }}
+            />
+
+            <div className="pt-3 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsActivityModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-white font-bold text-xs hover:bg-slate-900"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
+

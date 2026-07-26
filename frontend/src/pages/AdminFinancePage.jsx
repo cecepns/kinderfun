@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { request } from '../utils/request';
 import { API_ENDPOINTS } from '../utils/endpoints';
 import { exportToExcel } from '../utils/excelExport';
+import { directPrint } from '../utils/printHelper';
 import { Modal } from '../components/Modal';
 import { Pagination } from '../components/Pagination';
 import toast from 'react-hot-toast';
@@ -16,8 +17,10 @@ import {
   Calendar,
   Wallet,
   Download,
-  Search
+  Search,
+  Printer
 } from 'lucide-react';
+
 
 export const AdminFinancePage = () => {
   const [period, setPeriod] = useState('monthly');
@@ -154,6 +157,59 @@ export const AdminFinancePage = () => {
     toast.success('Laporan Pengeluaran berhasil diexport ke Excel!');
   };
 
+  const handlePrintFinance = () => {
+    const periodLabel = period === 'daily' ? 'Harian' : period === 'weekly' ? 'Mingguan' : 'Bulanan';
+    const contentHtml = `
+      <div class="summary-cards">
+        <div class="card">
+          <div class="card-label">Total Pemasukan (Tiket)</div>
+          <div class="card-value" style="color: #16a34a;">Rp ${Number(financeSummary.total_revenue).toLocaleString('id-ID')}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Total Pengeluaran</div>
+          <div class="card-value" style="color: #dc2626;">Rp ${Number(financeSummary.total_expenses).toLocaleString('id-ID')}</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Laba Bersih</div>
+          <div class="card-value" style="color: #2563eb;">Rp ${Number(financeSummary.net_profit).toLocaleString('id-ID')}</div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:20px; font-size:14px; font-weight:700; color:#0f172a;">Rincian Pengeluaran Operasional (${periodLabel})</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Judul Pengeluaran</th>
+            <th>Kategori</th>
+            <th>Tanggal</th>
+            <th>Deskripsi</th>
+            <th style="text-align:right;">Nominal (Rp)</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${expenses.length === 0 ? `<tr><td colspan="6" style="text-align:center;">Tidak ada catatan pengeluaran.</td></tr>` : 
+            expenses.map((e, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${e.title}</strong></td>
+                <td>${e.category || '-'}</td>
+                <td>${e.expense_date || '-'}</td>
+                <td>${e.description || '-'}</td>
+                <td style="text-align:right; font-weight:700;">Rp ${Number(e.amount).toLocaleString('id-ID')}</td>
+              </tr>
+            `).join('')
+          }
+        </tbody>
+      </table>
+    `;
+
+    directPrint({
+      title: `Laporan Keuangan & Pengeluaran (${periodLabel})`,
+      contentHtml
+    });
+  };
+
   return (
     <div className="space-y-5 md:space-y-6">
       {/* Banner Header - Fully Responsive */}
@@ -192,6 +248,12 @@ export const AdminFinancePage = () => {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handlePrintFinance}
+              className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"
+            >
+              <Printer className="w-4 h-4" /> Cetak Langsung
+            </button>
             <button
               onClick={handleExportExpenses}
               className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"

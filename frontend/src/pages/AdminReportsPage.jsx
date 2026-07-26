@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { request } from '../utils/request';
 import { API_ENDPOINTS } from '../utils/endpoints';
 import { exportToExcel } from '../utils/excelExport';
+import { directPrint } from '../utils/printHelper';
 import toast from 'react-hot-toast';
 import { 
   FileText, 
@@ -11,8 +12,10 @@ import {
   Filter, 
   Award, 
   Sparkles,
-  Download
+  Download,
+  Printer
 } from 'lucide-react';
+
 
 export const AdminReportsPage = () => {
   const [activeTab, setActiveTab] = useState('visitors');
@@ -98,21 +101,111 @@ export const AdminReportsPage = () => {
       return;
     }
     const exportData = attendanceLogs.map(log => ({
-      ...log,
-      formatted_date: formatDate(log.attendance_date),
-      status_label: log.status === 'present' ? 'Tepat Waktu' : 'Terlambat'
+      Nama_Staf: log.staff_name,
+      Tanggal: formatDate(log.attendance_date),
+      Jam_Masuk: log.check_in_time || '-',
+      Jam_Keluar: log.check_out_time || '-',
+      Status: log.status === 'present' ? 'Hadir' : log.status === 'late' ? 'Terlambat' : log.status === 'on_leave' ? 'Izin/Cuti' : 'Alpha',
+      Catatan: log.notes || '-'
     }));
-
-    const headers = [
-      { label: 'Nama Staf', key: 'staff_name' },
-      { label: 'Tanggal Presensi', key: 'formatted_date' },
-      { label: 'Jam Masuk', key: 'check_in_time' },
-      { label: 'Jam Pulang', key: 'check_out_time' },
-      { label: 'Status', key: 'status_label' },
-      { label: 'Catatan', key: 'notes' }
-    ];
-    exportToExcel(exportData, headers, 'Laporan_Presensi_Staf');
+    exportToExcel(exportData, [
+      { label: 'Nama Staf', key: 'Nama_Staf' },
+      { label: 'Tanggal', key: 'Tanggal' },
+      { label: 'Jam Masuk', key: 'Jam_Masuk' },
+      { label: 'Jam Keluar', key: 'Jam_Keluar' },
+      { label: 'Status', key: 'Status' },
+      { label: 'Catatan', key: 'Catatan' }
+    ], 'Laporan_Presensi_Staf');
     toast.success('Laporan Presensi Staf berhasil diexport ke Excel!');
+  };
+
+  const handlePrintReports = () => {
+    const periodLabel = period === 'daily' ? 'Harian' : period === 'weekly' ? 'Mingguan' : 'Bulanan';
+
+    if (activeTab === 'visitors') {
+      const contentHtml = `
+        <div class="summary-cards">
+          <div class="card">
+            <div class="card-label">Total Pengunjung / Transaksi</div>
+            <div class="card-value">${visitorStats.total_visitors} Anak</div>
+          </div>
+          <div class="card">
+            <div class="card-label">Total Poin Diberikan</div>
+            <div class="card-value" style="color:#8b5cf6;">${visitorStats.total_points_awarded} Pts</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:20px; font-size:14px; font-weight:700; color:#0f172a;">Daftar Transaksi Tiket Pengunjung (${periodLabel})</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Kode TRX</th>
+              <th>Nama Pelanggan</th>
+              <th>Paket Bermain</th>
+              <th>Poin</th>
+              <th style="text-align:right;">Total Biaya (Rp)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${visitorStats.recent_visitors.length === 0 ? `<tr><td colspan="6" style="text-align:center;">Tidak ada data transaksi.</td></tr>` :
+              visitorStats.recent_visitors.map((v, idx) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td><strong>${v.trx_code}</strong></td>
+                  <td>${v.customer_name || '-'}</td>
+                  <td>${v.package_name || '-'}</td>
+                  <td>${v.points_earned || 0} Pts</td>
+                  <td style="text-align:right; font-weight:700;">Rp ${Number(v.amount).toLocaleString('id-ID')}</td>
+                </tr>
+              `).join('')
+            }
+          </tbody>
+        </table>
+      `;
+
+      directPrint({
+        title: `Laporan Pengunjung Playground (${periodLabel})`,
+        contentHtml
+      });
+    } else {
+      const contentHtml = `
+        <h3 style="margin-top:10px; font-size:14px; font-weight:700; color:#0f172a;">Laporan Kehadiran & Presensi Staf</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Staf</th>
+              <th>Tanggal</th>
+              <th>Jam Masuk</th>
+              <th>Jam Keluar</th>
+              <th>Status</th>
+              <th>Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${attendanceLogs.length === 0 ? `<tr><td colspan="7" style="text-align:center;">Tidak ada log presensi.</td></tr>` :
+              attendanceLogs.map((log, idx) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td><strong>${log.staff_name}</strong></td>
+                  <td>${formatDate(log.attendance_date)}</td>
+                  <td>${log.check_in_time || '-'}</td>
+                  <td>${log.check_out_time || '-'}</td>
+                  <td>${log.status === 'present' ? 'Hadir' : log.status === 'late' ? 'Terlambat' : 'Izin'}</td>
+                  <td>${log.notes || '-'}</td>
+                </tr>
+              `).join('')
+            }
+          </tbody>
+        </table>
+      `;
+
+      directPrint({
+        title: `Laporan Presensi Staf Kinderfun`,
+        contentHtml
+      });
+    }
   };
 
   return (
@@ -151,12 +244,20 @@ export const AdminReportsPage = () => {
             ))}
           </div>
 
-          <button
-            onClick={activeTab === 'visitors' ? handleExportVisitors : handleExportAttendance}
-            className="w-full sm:w-auto py-2.5 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"
-          >
-            <Download className="w-4 h-4 text-white" /> Export Excel
-          </button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button
+              onClick={handlePrintReports}
+              className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"
+            >
+              <Printer className="w-4 h-4 text-white" /> Cetak Langsung
+            </button>
+            <button
+              onClick={activeTab === 'visitors' ? handleExportVisitors : handleExportAttendance}
+              className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"
+            >
+              <Download className="w-4 h-4 text-white" /> Export Excel
+            </button>
+          </div>
         </div>
       </div>
 

@@ -15,12 +15,41 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+const multer = require('multer');
+
 // Ensure upload directory exists
 const uploadDir = path.join(__dirname, 'uploads-kinderfun');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 app.use('/uploads', express.static(uploadDir));
+
+// Multer storage configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}${ext}`;
+    cb(null, filename);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+// Generic upload endpoint
+app.post('/api/upload', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Tidak ada file yang diunggah' });
+  }
+  const fileUrl = `/uploads/${req.file.filename}`;
+  return res.json({ success: true, url: fileUrl, message: 'Upload berhasil' });
+});
+
 
 // Database connection pool with graceful fallback to in-memory store if DB is unreachable
 let dbPool = null;
@@ -81,8 +110,34 @@ const memoryStore = {
   expenses: [
     { id: 1, title: 'Pembelian Disinfektan & Pembersih Mainan', category: 'Kebersihan', amount: 150000, expense_date: new Date(Date.now() - 86400000 * 3).toISOString().split('T')[0], description: 'Stok pembersih bulanan tempat mainan' },
     { id: 2, title: 'Pembayaran Listrik & WiFi', category: 'Utilitas', amount: 650000, expense_date: new Date(Date.now() - 86400000 * 5).toISOString().split('T')[0], description: 'Tagihan bulanan arena playground' }
-  ]
+  ],
+  activities: [
+    {
+      id: 1,
+      title: 'Lomba Mewarnai Bersama Maskot Kinderfun',
+      category: 'Event',
+      cover_image: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=800',
+      description: '<p>Halo Ayah &amp; Bunda! Kinderfun mengadakan <strong>Lomba Mewarnai Kreatif</strong> untuk si kecil usia 3-7 tahun.</p><p>Acara ini akan dimeriahkan oleh kedatangan Maskot Red Ant Kinderfun yang akan membagikan berbagai souvenir menarik!</p>',
+      author: 'Admin Kinderfun',
+      event_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
+      created_at: new Date()
+    },
+    {
+      id: 2,
+      title: 'Kegiatan Sensori Anak: Playing With Color Clay',
+      category: 'Edukasi',
+      cover_image: 'https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800',
+      description: '<p>Melatih sensorik motorik halus si kecil melalui permainan lilin organik yang aman. Kegiatan ini dibimbing oleh instruktur berpengalaman dari Kinderfun Team.</p>',
+      author: 'Admin Kinderfun',
+      event_date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
+      created_at: new Date()
+    }
+  ],
+  settings: {
+    default_visit_points: '10'
+  }
 };
+
 
 // Helper pagination parser
 function getPaginationParams(req) {
@@ -101,16 +156,48 @@ async function initDb() {
       console.log('✅ Connected to MySQL database successfully!');
       conn.release();
 
-      // Auto run migration to add status column in point_redemptions if not exists
+      // Auto run migration to add status column in point_redemptions & activities/settings table if not exists
       try {
         const [columns] = await dbPool.query("SHOW COLUMNS FROM point_redemptions LIKE 'status'");
         if (columns.length === 0) {
           await dbPool.query("ALTER TABLE point_redemptions ADD COLUMN status ENUM('pending', 'picked_up') DEFAULT 'picked_up'");
           console.log('✅ Added status column to point_redemptions table.');
         }
+
+        await dbPool.query(`
+          CREATE TABLE IF NOT EXISTS activities (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            category VARCHAR(100) DEFAULT 'Kegiatan',
+            cover_image VARCHAR(255),
+            description LONGTEXT,
+            author VARCHAR(100) DEFAULT 'Admin Kinderfun',
+            event_date DATE NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+
+        await dbPool.query(`
+          CREATE TABLE IF NOT EXISTS settings (
+            setting_key VARCHAR(100) PRIMARY KEY,
+            setting_value TEXT NOT NULL,
+            description VARCHAR(255),
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        `);
+
+        await dbPool.query(`
+          INSERT INTO settings (setting_key, setting_value, description)
+          VALUES ('default_visit_points', '10', 'Default poin reward per transaksi kunjungan')
+          ON DUPLICATE KEY UPDATE setting_key = setting_key;
+        `);
+
+        console.log('✅ Checked/created activities & settings table structure.');
       } catch (migErr) {
-        console.log('⚠️ Migration warning (point_redemptions.status):', migErr.message);
+        console.log('⚠️ Migration warning:', migErr.message);
       }
+
+
     } catch (err) {
       console.log('⚠️ MySQL connection unavailable, using fallback in-memory store for instant preview:', err.message);
       useInMemory = true;
@@ -696,6 +783,62 @@ app.post('/api/souvenirs', async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 });
+
+app.put('/api/souvenirs/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { name, point_cost, stock, description, image_url } = req.body;
+  if (!name || !point_cost) {
+    return res.status(400).json({ success: false, message: 'Nama souvenir dan poin penukaran wajib diisi' });
+  }
+
+  if (useInMemory) {
+    const souvenir = memoryStore.souvenirs.find(s => s.id === id);
+    if (!souvenir) return res.status(404).json({ success: false, message: 'Souvenir tidak ditemukan' });
+
+    souvenir.name = name;
+    souvenir.point_cost = parseInt(point_cost);
+    souvenir.stock = parseInt(stock) || 0;
+    souvenir.description = description || '';
+    if (image_url !== undefined) souvenir.image_url = image_url;
+
+    return res.json({ success: true, data: souvenir, message: 'Souvenir berhasil diperbarui' });
+  }
+
+  try {
+    const [result] = await dbPool.query(
+      'UPDATE souvenirs SET name = ?, point_cost = ?, stock = ?, description = ?, image_url = ? WHERE id = ?',
+      [name, point_cost, stock || 0, description || '', image_url || '', id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Souvenir tidak ditemukan' });
+    }
+
+    return res.json({ success: true, message: 'Souvenir berhasil diperbarui' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/souvenirs/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (useInMemory) {
+    memoryStore.souvenirs = memoryStore.souvenirs.filter(s => s.id !== id);
+    return res.json({ success: true, message: 'Souvenir berhasil dihapus' });
+  }
+
+  try {
+    const [result] = await dbPool.query('DELETE FROM souvenirs WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Souvenir tidak ditemukan' });
+    }
+    return res.json({ success: true, message: 'Souvenir berhasil dihapus' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 
 app.post('/api/souvenirs/redeem', async (req, res) => {
   const { customer_id, souvenir_id, qty = 1, notes } = req.body;
@@ -1480,7 +1623,207 @@ app.get('/api/reports/finance', async (req, res) => {
   }
 });
 
+// Activities / Articles endpoints
+app.get('/api/activities', async (req, res) => {
+  const { page, limit, offset, search } = getPaginationParams(req);
+
+  if (useInMemory) {
+    let filtered = memoryStore.activities;
+    if (search) {
+      filtered = filtered.filter(a => 
+        a.title.toLowerCase().includes(search) || 
+        (a.category && a.category.toLowerCase().includes(search)) ||
+        (a.description && a.description.toLowerCase().includes(search))
+      );
+    }
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const data = filtered.slice(offset, offset + limit);
+
+    return res.json({ success: true, data, pagination: { page, limit, total, totalPages } });
+  }
+
+  try {
+    let sql = 'SELECT * FROM activities';
+    let countSql = 'SELECT COUNT(*) as total FROM activities';
+    const params = [];
+
+    if (search) {
+      sql += ' WHERE title LIKE ? OR category LIKE ? OR description LIKE ?';
+      countSql += ' WHERE title LIKE ? OR category LIKE ? OR description LIKE ?';
+      const pattern = `%${search}%`;
+      params.push(pattern, pattern, pattern);
+    }
+
+    sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+
+    const [countRows] = await dbPool.query(countSql, params);
+    const total = countRows[0].total;
+    const totalPages = Math.ceil(total / limit) || 1;
+
+    const [rows] = await dbPool.query(sql, [...params, limit, offset]);
+    return res.json({ success: true, data: rows, pagination: { page, limit, total, totalPages } });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/api/activities/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (useInMemory) {
+    const item = memoryStore.activities.find(a => a.id === id);
+    if (item) return res.json({ success: true, data: item });
+    return res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
+  }
+
+  try {
+    const [rows] = await dbPool.query('SELECT * FROM activities WHERE id = ?', [id]);
+    if (rows.length > 0) return res.json({ success: true, data: rows[0] });
+    return res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.post('/api/activities', async (req, res) => {
+  const { title, category, cover_image, description, author, event_date } = req.body;
+  if (!title) {
+    return res.status(400).json({ success: false, message: 'Judul kegiatan wajib diisi' });
+  }
+
+  if (useInMemory) {
+    const newItem = {
+      id: Date.now(),
+      title,
+      category: category || 'Kegiatan',
+      cover_image: cover_image || '',
+      description: description || '',
+      author: author || 'Admin Kinderfun',
+      event_date: event_date || null,
+      created_at: new Date()
+    };
+    memoryStore.activities.unshift(newItem);
+    return res.status(201).json({ success: true, data: newItem, message: 'Kegiatan berhasil ditambahkan' });
+  }
+
+  try {
+    const [result] = await dbPool.query(
+      'INSERT INTO activities (title, category, cover_image, description, author, event_date) VALUES (?, ?, ?, ?, ?, ?)',
+      [title, category || 'Kegiatan', cover_image || '', description || '', author || 'Admin Kinderfun', event_date || null]
+    );
+    return res.status(201).json({ success: true, data: { id: result.insertId, title }, message: 'Kegiatan berhasil ditambahkan' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/activities/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { title, category, cover_image, description, author, event_date } = req.body;
+
+  if (!title) {
+    return res.status(400).json({ success: false, message: 'Judul kegiatan wajib diisi' });
+  }
+
+  if (useInMemory) {
+    const item = memoryStore.activities.find(a => a.id === id);
+    if (!item) return res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
+
+    item.title = title;
+    item.category = category || 'Kegiatan';
+    if (cover_image !== undefined) item.cover_image = cover_image;
+    item.description = description || '';
+    if (author) item.author = author;
+    if (event_date !== undefined) item.event_date = event_date;
+
+    return res.json({ success: true, data: item, message: 'Kegiatan berhasil diperbarui' });
+  }
+
+  try {
+    const [result] = await dbPool.query(
+      'UPDATE activities SET title = ?, category = ?, cover_image = ?, description = ?, author = ?, event_date = ? WHERE id = ?',
+      [title, category || 'Kegiatan', cover_image || '', description || '', author || 'Admin Kinderfun', event_date || null, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
+    }
+
+    return res.json({ success: true, message: 'Kegiatan berhasil diperbarui' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.delete('/api/activities/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+
+  if (useInMemory) {
+    memoryStore.activities = memoryStore.activities.filter(a => a.id !== id);
+    return res.json({ success: true, message: 'Kegiatan berhasil dihapus' });
+  }
+
+  try {
+    const [result] = await dbPool.query('DELETE FROM activities WHERE id = ?', [id]);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Kegiatan tidak ditemukan' });
+    }
+    return res.json({ success: true, message: 'Kegiatan berhasil dihapus' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Settings endpoints
+app.get('/api/settings', async (req, res) => {
+  if (useInMemory) {
+    return res.json({ success: true, data: memoryStore.settings });
+  }
+
+  try {
+    const [rows] = await dbPool.query('SELECT setting_key, setting_value FROM settings');
+    const settingsMap = {};
+    rows.forEach(r => {
+      settingsMap[r.setting_key] = r.setting_value;
+    });
+    return res.json({ success: true, data: settingsMap });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.put('/api/settings', async (req, res) => {
+  const { default_visit_points } = req.body;
+
+  if (default_visit_points === undefined) {
+    return res.status(400).json({ success: false, message: 'Pengaturan default poin wajib diisi' });
+  }
+
+  const valStr = String(parseInt(default_visit_points) || 10);
+
+  if (useInMemory) {
+    memoryStore.settings.default_visit_points = valStr;
+    return res.json({ success: true, data: memoryStore.settings, message: 'Pengaturan poin berhasil disimpan!' });
+  }
+
+  try {
+    await dbPool.query(
+      `INSERT INTO settings (setting_key, setting_value, description)
+       VALUES ('default_visit_points', ?, 'Default poin reward per transaksi kunjungan')
+       ON DUPLICATE KEY UPDATE setting_value = ?`,
+      [valStr, valStr]
+    );
+
+    return res.json({ success: true, message: 'Pengaturan poin berhasil disimpan!' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Kinderfun Backend Server listening on http://localhost:${PORT}`);
 });
+
+
