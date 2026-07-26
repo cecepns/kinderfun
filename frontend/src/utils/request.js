@@ -19,6 +19,20 @@ export const request = {
     }
   },
 
+  postForm: async (url, formData) => {
+    try {
+      const response = await api.post(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { success: false, message: error.message };
+    }
+  },
+
+
   put: async (url, body = {}) => {
     try {
       const response = await api.put(url, body);

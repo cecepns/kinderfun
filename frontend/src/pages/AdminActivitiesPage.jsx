@@ -83,7 +83,7 @@ export const AdminActivitiesPage = () => {
 
     setUploadLoading(true);
     try {
-      const res = await request.post(API_ENDPOINTS.UPLOAD, formData);
+      const res = await request.postForm(API_ENDPOINTS.UPLOAD, formData);
       if (res.success) {
         setForm(prev => ({ ...prev, cover_image: res.url }));
         toast.success('Cover image berhasil diunggah!');
@@ -110,7 +110,7 @@ export const AdminActivitiesPage = () => {
       formData.append('image', file);
 
       try {
-        const res = await request.post(API_ENDPOINTS.UPLOAD, formData);
+        const res = await request.postForm(API_ENDPOINTS.UPLOAD, formData);
         if (res.success && quillRef.current) {
           const editor = quillRef.current.getEditor();
           const range = editor.getSelection(true);
@@ -123,6 +123,7 @@ export const AdminActivitiesPage = () => {
       }
     };
   };
+
 
   const modules = {
     toolbar: {

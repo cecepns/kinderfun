@@ -72,7 +72,7 @@ export const RewardCatalogPage = ({ user }) => {
 
     setUploadLoading(true);
     try {
-      const res = await request.post(API_ENDPOINTS.UPLOAD, formData);
+      const res = await request.postForm(API_ENDPOINTS.UPLOAD, formData);
       if (res.success) {
         setSouvenirForm(prev => ({ ...prev, image_url: res.url }));
         toast.success('Foto souvenir berhasil diunggah!');
@@ -83,6 +83,7 @@ export const RewardCatalogPage = ({ user }) => {
       setUploadLoading(false);
     }
   };
+
 
 
   useEffect(() => {
