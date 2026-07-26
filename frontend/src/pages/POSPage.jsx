@@ -209,54 +209,66 @@ export const POSPage = () => {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {packages.map((pkg) => {
+            {packages.map((pkg, idx) => {
               const price = calculatePrice(pkg);
               const isSelected = selectedPackage?.id === pkg.id;
+
+              // Vibrant palette variations for cards
+              const cardThemes = [
+                { bg: 'bg-gradient-to-br from-orange-50 to-amber-50', border: 'border-orange-200', activeBorder: 'border-orange-500 ring-4 ring-orange-100', iconBg: 'bg-gradient-to-r from-orange-500 to-amber-500', badgeBg: 'bg-orange-500' },
+                { bg: 'bg-gradient-to-br from-rose-50 to-orange-50', border: 'border-rose-200', activeBorder: 'border-rose-500 ring-4 ring-rose-100', iconBg: 'bg-gradient-to-r from-rose-500 to-orange-500', badgeBg: 'bg-rose-500' },
+                { bg: 'bg-gradient-to-br from-amber-50 to-yellow-50', border: 'border-amber-200', activeBorder: 'border-amber-500 ring-4 ring-amber-100', iconBg: 'bg-gradient-to-r from-amber-500 to-yellow-500', badgeBg: 'bg-amber-500' },
+                { bg: 'bg-gradient-to-br from-red-50 to-orange-50', border: 'border-red-200', activeBorder: 'border-red-500 ring-4 ring-red-100', iconBg: 'bg-gradient-to-r from-red-500 to-orange-500', badgeBg: 'bg-red-500' },
+              ];
+
+              const theme = cardThemes[idx % cardThemes.length];
 
               return (
                 <div
                   key={pkg.id}
                   onClick={() => setSelectedPackage(pkg)}
-                  className={`cursor-pointer rounded-2xl p-5 transition-all border relative overflow-hidden flex flex-col justify-between ${
+                  className={`cursor-pointer rounded-2xl p-5 transition-all border-2 relative overflow-hidden flex flex-col justify-between ${
+                    theme.bg
+                  } ${
                     isSelected
-                      ? 'bg-white border-2 border-emerald-600 shadow-xs ring-2 ring-emerald-100'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-2xs'
+                      ? `${theme.activeBorder} shadow-md scale-[1.02]`
+                      : `${theme.border} hover:border-orange-300 hover:shadow-md hover:scale-[1.01]`
                   }`}
                 >
                   {pkg.best_value === 1 && (
-                    <span className="absolute top-4 right-4 bg-amber-500 text-white text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-md shadow-2xs">
+                    <span className="absolute top-3.5 right-3.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                       ★ Best Value
                     </span>
                   )}
 
                   <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-white shadow-2xs flex-shrink-0 ${
-                        pkg.is_member_package ? 'bg-amber-500' : 'bg-emerald-600'
+                    <div className="flex items-center gap-3.5 mb-3">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-white shadow-md flex-shrink-0 ${
+                        pkg.is_member_package ? 'bg-gradient-to-r from-amber-500 to-orange-500' : theme.iconBg
                       }`}>
-                        {pkg.is_member_package ? <Sparkles className="w-5 h-5 text-white" /> : `${pkg.duration_hours}h`}
+                        {pkg.is_member_package ? <Sparkles className="w-6 h-6 text-white animate-pulse" /> : `${pkg.duration_hours}h`}
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900">{pkg.name}</h3>
-                        <p className="text-xs text-slate-500 font-medium">
+                        <h3 className="text-sm font-extrabold text-slate-900 leading-snug">{pkg.name}</h3>
+                        <p className="text-xs text-slate-600 font-bold mt-0.5">
                           {pkg.is_member_package ? `${pkg.visits_count}x Kunjungan` : `Durasi ${pkg.duration_hours} Jam`}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-end justify-between">
+                  <div className="mt-4 pt-3 border-t border-slate-200/70 flex items-end justify-between">
                     <div>
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase">Tarif {isWeekend ? 'Weekend' : 'Weekday'}</span>
-                      <p className="text-lg font-bold text-slate-900">
+                      <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">Tarif {isWeekend ? 'Weekend' : 'Weekday'}</span>
+                      <p className="text-xl font-black text-slate-900">
                         Rp {price.toLocaleString('id-ID')}
                       </p>
                     </div>
 
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
-                      isSelected ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-400'
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                      isSelected ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-sm' : 'bg-white text-slate-300 border border-slate-200'
                     }`}>
-                      <CheckCircle2 className="w-4 h-4" />
+                      <CheckCircle2 className="w-5 h-5" />
                     </div>
                   </div>
                 </div>

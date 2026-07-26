@@ -1,17 +1,18 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { 
-  Ticket, 
-  Award, 
-  Gift, 
-  UserCheck, 
-  FileText, 
-  TrendingUp, 
+import {
+  Ticket,
+  Award,
+  Gift,
+  UserCheck,
+  FileText,
+  TrendingUp,
   Users,
   Tag,
-  X, 
+  X,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  Sparkles
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
@@ -29,22 +30,24 @@ export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
   const allowedItems = navItems.filter(item => item.roles.includes(user?.role || 'staff'));
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white text-slate-800">
-      {/* Header Branding (Fixed Header in Sidebar) */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 shrink-0 bg-white sticky top-0 z-10">
-        <div className="flex items-center justify-center w-full h-12 overflow-hidden">
-          <img src="/kinderfun.jpg" alt="Kinderfun Logo" className="h-full max-w-full object-contain" />
+    <div className="flex flex-col h-full text-white" style={{ background: 'linear-gradient(160deg, #ea580c 0%, #ef4444 60%, #dc2626 100%)' }}>
+      {/* Header Branding */}
+      <div className="flex items-center justify-between p-4 shrink-0 sticky top-0 z-10" style={{ background: 'rgba(0,0,0,0.12)' }}>
+        <div className="flex items-center gap-3 w-full">
+          <div className="w-auto h-11 flex-shrink-0 flex items-center justify-center">
+            <img src="/kinderfun.jpg" alt="Kinderfun Logo" className="h-full max-w-full object-contain rounded-lg" />
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex-shrink-0"
+          className="lg:hidden p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 flex-shrink-0 transition-all"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
         {allowedItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -53,10 +56,9 @@ export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
               to={item.path}
               onClick={onClose}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-3 rounded-xl font-medium transition-all text-xs ${
-                  isActive
-                    ? 'bg-purple-600 text-white shadow-xs font-bold'
-                    : 'text-slate-600 hover:bg-purple-50 hover:text-purple-700'
+                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold transition-all text-xs ${isActive
+                  ? 'bg-white text-orange-600 shadow-md font-black'
+                  : 'text-white/85 hover:bg-white/15 hover:text-white'
                 }`
               }
             >
@@ -68,16 +70,19 @@ export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
       </nav>
 
       {/* Quick Points Info Card */}
-      <div className="p-3 m-3 bg-purple-50 rounded-xl border border-purple-100 text-center shrink-0">
-        <p className="text-[11px] font-medium text-slate-500">Info Poin Pelanggan</p>
-        <p className="text-xs font-bold text-purple-700 mt-0.5">1 Kunjungan = 10 Poin</p>
+      <div className="p-3 m-3 bg-white/15 rounded-xl border border-white/20 text-center shrink-0 backdrop-blur-sm">
+        <div className="flex items-center justify-center gap-1 mb-0.5">
+          <Sparkles className="w-3 h-3 text-yellow-300" />
+          <p className="text-[10px] font-bold text-orange-100">Info Poin Pelanggan</p>
+        </div>
+        <p className="text-xs font-black text-yellow-300">1 Kunjungan = 10 Poin</p>
       </div>
 
       {/* Logout Button */}
-      <div className="p-3 border-t border-slate-200 shrink-0">
+      <div className="p-3 shrink-0" style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}>
         <button
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-600 font-semibold text-xs transition-all border border-slate-200"
+          className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-all border border-white/20"
         >
           <LogOut className="w-4 h-4" />
           <span>Keluar</span>
@@ -89,7 +94,7 @@ export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
   return (
     <>
       {/* Fixed Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 h-screen sticky top-0 border-r border-slate-200 bg-white z-20 overflow-hidden">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 h-screen sticky top-0 z-20 overflow-hidden shadow-xl">
         <SidebarContent />
       </aside>
 
@@ -98,9 +103,9 @@ export const Sidebar = ({ isOpen, onClose, user, onLogout }) => {
         <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
             onClick={onClose}
-            className="fixed inset-0 bg-slate-900/30 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
           />
-          <aside className="relative w-64 max-w-xs h-full bg-white z-50 shadow-xl border-r border-slate-200 overflow-hidden">
+          <aside className="relative w-64 max-w-xs h-full z-50 shadow-2xl overflow-hidden">
             <SidebarContent />
           </aside>
         </div>

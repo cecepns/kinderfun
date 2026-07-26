@@ -1,29 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    @apply bg-slate-50 text-slate-800 antialiased;
+    font-family: 'Nunito', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    @apply bg-orange-50 text-slate-800 antialiased;
   }
   h1, h2, h3, h4, h5, h6, .font-brand {
-    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Nunito', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   }
 }
 
-/* Custom soft scrollbars */
+/* Custom soft scrollbars — oranye senada theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f8fafc;
+  background: #fff7ed;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #fdba74;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #f97316;
+}
+
+/* Gradient text utility */
+.text-gradient-kf {
+  background: linear-gradient(135deg, #f97316, #ef4444);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Fun bounce animation for mascot */
+@keyframes mascot-float {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+.mascot-float {
+  animation: mascot-float 3s ease-in-out infinite;
+}
+
+/* Subtle sparkle pulse */
+@keyframes sparkle-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+.sparkle-pulse {
+  animation: sparkle-pulse 2s ease-in-out infinite;
 }

@@ -316,8 +316,8 @@ export const RewardCatalogPage = ({ user }) => {
       {/* Banner */}
       <div className="p-4 sm:p-6 rounded-2xl bg-white text-slate-900 shadow-2xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-200">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wider mb-2">
-            <Gift className="w-4 h-4 text-purple-600" /> Katalog Merchandise & Souvenir
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-orange-50 text-orange-600 text-xs font-bold uppercase tracking-wider mb-2">
+            <Gift className="w-4 h-4 text-orange-500" /> Katalog Merchandise & Souvenir
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-wide text-slate-900">
             Penukaran Reward Poin
@@ -329,7 +329,7 @@ export const RewardCatalogPage = ({ user }) => {
 
         <button
           onClick={openCreateModal}
-          className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"
+          className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-xs shadow-2xs transition-all flex items-center justify-center gap-1.5"
         >
           <Plus className="w-4 h-4" /> Tambah Souvenir
         </button>
@@ -343,17 +343,17 @@ export const RewardCatalogPage = ({ user }) => {
             onClick={() => setActiveTab('catalog')}
             className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[6px] ${
               activeTab === 'catalog'
-                ? 'border-purple-600 text-purple-600 font-extrabold'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
+                ? 'border-orange-500 text-orange-600 font-extrabold'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
             }`}
           >
-            Katalog Souvenir
+            Katalog Item ({souvenirs.length})
           </button>
           <button
             onClick={() => setActiveTab('claims')}
-            className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[6px] relative ${
+            className={`pb-3 px-4 text-xs font-bold transition-all border-b-2 -mb-[6px] ${
               activeTab === 'claims'
-                ? 'border-purple-600 text-purple-600 font-extrabold'
+                ? 'border-orange-500 text-orange-600 font-extrabold'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
