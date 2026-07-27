@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from '../utils/endpoints';
 import { Modal } from '../components/Modal';
 import { Pagination } from '../components/Pagination';
 import toast from 'react-hot-toast';
+import { printThermalReceipt } from '../utils/printHelper';
 import { 
   Ticket, 
   Sparkles, 
@@ -586,7 +587,7 @@ export const POSPage = () => {
               </div>
               <div>
                 <h4 className="text-lg font-bold font-sans text-slate-900">KINDERFUN PLAYGROUND</h4>
-                <p className="text-xs text-slate-500">Play, Learn, Grow & Smile</p>
+                <p className="text-xs text-slate-500 font-semibold text-amber-600">Fun for kids, peace of mind for parents</p>
               </div>
 
               <div className="border-t border-b border-slate-200 py-3 text-xs text-left space-y-1 text-slate-700">
@@ -605,7 +606,7 @@ export const POSPage = () => {
 
             <button
               onClick={() => {
-                window.print();
+                printThermalReceipt(currentReceipt);
                 setIsReceiptModalOpen(false);
               }}
               className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-2xs"

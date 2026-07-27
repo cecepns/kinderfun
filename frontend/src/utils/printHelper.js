@@ -148,3 +148,172 @@ export const directPrint = ({ title, contentHtml }) => {
     }, 1000);
   }, 300);
 };
+
+export const printThermalReceipt = (receipt) => {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentWindow.document;
+  doc.open();
+
+  const formatPrice = (val) => {
+    return 'Rp ' + Number(val).toLocaleString('id-ID');
+  };
+
+  doc.write(`
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Struk Tiket ${receipt.trx_code}</title>
+        <style>
+          @page {
+            size: 58mm auto;
+            margin: 0;
+          }
+          body {
+            font-family: 'Courier New', Courier, monospace;
+            color: #000;
+            margin: 0;
+            padding: 2mm 3mm;
+            font-size: 10px;
+            line-height: 1.3;
+            width: 52mm;
+            box-sizing: border-box;
+          }
+          .text-center {
+            text-align: center;
+          }
+          .text-right {
+            text-align: right;
+          }
+          .bold {
+            font-weight: bold;
+          }
+          .header-logo {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: contain;
+            margin-bottom: 4px;
+            border: 1px solid #000;
+          }
+          .store-name {
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+          }
+          .slogan {
+            font-size: 8px;
+            margin-top: 1px;
+            margin-bottom: 2px;
+          }
+          .divider {
+            border-top: 1px dashed #000;
+            margin: 5px 0;
+          }
+          .info-table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          .info-table td {
+            padding: 1px 0;
+            font-size: 9px;
+            vertical-align: top;
+          }
+          .footer-msg {
+            font-size: 8px;
+            margin-top: 6px;
+            font-style: italic;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="text-center">
+          <img src="/kinderfun.jpg" class="header-logo" alt="Logo" />
+          <div class="store-name">KINDERFUN PLAYGROUND</div>
+          <div class="slogan">Fun for kids, peace of mind for parents</div>
+        </div>
+        
+        <div class="divider"></div>
+        
+        <table class="info-table">
+          <tr>
+            <td>No. Tiket:</td>
+            <td class="text-right bold">${receipt.trx_code}</td>
+          </tr>
+          <tr>
+            <td>Waktu:</td>
+            <td class="text-right">${receipt.date}</td>
+          </tr>
+        </table>
+        
+        <div class="divider"></div>
+        
+        <table class="info-table">
+          <tr>
+            <td colspan="2" class="bold">PELANGGAN:</td>
+          </tr>
+          <tr>
+            <td colspan="2">${receipt.customer_name}</td>
+          </tr>
+        </table>
+        
+        <div class="divider"></div>
+        
+        <table class="info-table">
+          <tr>
+            <td class="bold">${receipt.package_name}</td>
+            <td class="text-right bold">${formatPrice(receipt.amount)}</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="font-size: 8px;">
+              ${receipt.is_weekend ? 'Tarif Weekend / Libur' : 'Tarif Hari Kerja (Weekday)'}
+            </td>
+          </tr>
+        </table>
+        
+        <div class="divider"></div>
+        
+        <table class="info-table">
+          <tr>
+            <td>Metode Bayar:</td>
+            <td class="text-right uppercase bold">${receipt.payment_method}</td>
+          </tr>
+          <tr>
+            <td class="bold">Total:</td>
+            <td class="text-right bold" style="font-size: 11px;">${formatPrice(receipt.amount)}</td>
+          </tr>
+        </table>
+        
+        <div class="divider"></div>
+        
+        <div class="text-center bold" style="font-size: 9px;">
+          Poin Kunjungan: +${receipt.points_earned} Poin
+        </div>
+        
+        <div class="divider"></div>
+        
+        <div class="text-center footer-msg">
+          Terima kasih atas kunjungan Anda!<br>
+          Selamat bermain! Harap selalu mengawasi si kecil.
+        </div>
+      </body>
+    </html>
+  `);
+  doc.close();
+
+  iframe.contentWindow.focus();
+  setTimeout(() => {
+    iframe.contentWindow.print();
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  }, 300);
+};
+
