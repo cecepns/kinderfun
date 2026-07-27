@@ -195,14 +195,6 @@ export const printThermalReceipt = (receipt) => {
           .bold {
             font-weight: bold;
           }
-          .header-logo {
-            width: 45px;
-            height: 45px;
-            border-radius: 50%;
-            object-fit: contain;
-            margin-bottom: 4px;
-            border: 1px solid #000;
-          }
           .store-name {
             font-size: 11px;
             font-weight: bold;
@@ -235,7 +227,6 @@ export const printThermalReceipt = (receipt) => {
       </head>
       <body>
         <div class="text-center">
-          <img src="/kinderfun.jpg" class="header-logo" alt="Logo" />
           <div class="store-name">KINDERFUN PLAYGROUND</div>
           <div class="slogan">Fun for kids, peace of mind for parents</div>
         </div>

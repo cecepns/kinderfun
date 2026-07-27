@@ -582,9 +582,6 @@ export const POSPage = () => {
         {currentReceipt && (
           <div className="space-y-6 text-center">
             <div className="p-6 rounded-xl bg-slate-50 border border-dashed border-slate-300 space-y-4">
-              <div className="flex justify-center">
-                <img src="/kinderfun.jpg" alt="Kinderfun Logo" className="w-16 h-16 object-contain rounded-full border" />
-              </div>
               <div>
                 <h4 className="text-lg font-bold font-sans text-slate-900">KINDERFUN PLAYGROUND</h4>
                 <p className="text-xs text-slate-500 font-semibold text-amber-600">Fun for kids, peace of mind for parents</p>
